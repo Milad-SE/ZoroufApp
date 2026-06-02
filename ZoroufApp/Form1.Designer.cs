@@ -39,7 +39,7 @@
             // 
             btnAddNewDish.Location = new Point(815, 76);
             btnAddNewDish.Name = "btnAddNewDish";
-            btnAddNewDish.Size = new Size(249, 70);
+            btnAddNewDish.Size = new Size(249, 56);
             btnAddNewDish.TabIndex = 1;
             btnAddNewDish.Text = "افزودن ظروف جدید";
             btnAddNewDish.UseVisualStyleBackColor = true;
@@ -47,7 +47,7 @@
             // 
             // btnEditDish
             // 
-            btnEditDish.Location = new Point(815, 188);
+            btnEditDish.Location = new Point(815, 159);
             btnEditDish.Name = "btnEditDish";
             btnEditDish.Size = new Size(119, 42);
             btnEditDish.TabIndex = 2;
@@ -57,7 +57,7 @@
             // 
             // btnDeleteDish
             // 
-            btnDeleteDish.Location = new Point(945, 188);
+            btnDeleteDish.Location = new Point(945, 159);
             btnDeleteDish.Name = "btnDeleteDish";
             btnDeleteDish.Size = new Size(119, 42);
             btnDeleteDish.TabIndex = 3;
@@ -67,12 +67,12 @@
             // 
             // txtSearch
             // 
-            txtSearch.Location = new Point(568, 22);
+            txtSearch.Location = new Point(575, 28);
             txtSearch.Multiline = true;
             txtSearch.Name = "txtSearch";
             txtSearch.PlaceholderText = "جستجوی نام ظرف...";
             txtSearch.RightToLeft = RightToLeft.Yes;
-            txtSearch.Size = new Size(209, 39);
+            txtSearch.Size = new Size(209, 34);
             txtSearch.TabIndex = 4;
             txtSearch.TextChanged += txtSearch_TextChanged;
             txtSearch.DoubleClick += txtSearch_TextChanged;
@@ -83,7 +83,7 @@
             flowLayoutPanelDishes.Location = new Point(12, 76);
             flowLayoutPanelDishes.Name = "flowLayoutPanelDishes";
             flowLayoutPanelDishes.RightToLeft = RightToLeft.Yes;
-            flowLayoutPanelDishes.Size = new Size(765, 495);
+            flowLayoutPanelDishes.Size = new Size(772, 495);
             flowLayoutPanelDishes.TabIndex = 6;
             // 
             // Form1
