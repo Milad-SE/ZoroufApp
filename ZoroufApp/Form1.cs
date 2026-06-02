@@ -13,10 +13,10 @@ namespace ZoroufApp
         private int selectedDishId = -1;
         private Button selectedButton = null;
 
-        // برنامه برای همیشه روی دارک مود قفل شد
+        
         private const bool isDarkMode = true;
 
-        // --- پالت رنگی شیک دارک مود (Dark Mode) ---
+        
         private Color colorFormBgDark = Color.FromArgb(18, 18, 18);
         private Color colorPanelBgDark = Color.FromArgb(30, 30, 30);
         private Color colorCardBgDark = Color.FromArgb(43, 43, 43);
@@ -24,15 +24,15 @@ namespace ZoroufApp
         private Color colorCardHoverDark = Color.FromArgb(55, 55, 55);
         private Color colorTextDark = Color.FromArgb(240, 240, 240);
 
-        // رنگ ثابت کارت انتخاب شده (آبی نئون مدرن)
+        
         private Color colorCardSelected = Color.FromArgb(41, 121, 255);
 
-        // رنگ دکمه‌های عملیاتی سمت راست
+        
         private Color colorBtnAdd = Color.FromArgb(46, 204, 113);
         private Color colorBtnEdit = Color.FromArgb(52, 152, 219);
         private Color colorBtnDelete = Color.FromArgb(231, 76, 60);
 
-        // --- کدهای اتصال به ویندوز برای تغییر رنگ نوار عنوان ---
+        
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
@@ -44,10 +44,10 @@ namespace ZoroufApp
             InitializeComponent();
             LoadProgramIcon();
 
-            // اتصال رویداد Paint به تکست‌باکس جستجو برای رسم حاشیه گرد اختصاصی
+            
             if (txtSearch != null)
             {
-                txtSearch.BorderStyle = BorderStyle.None; // حذف بردر پیش‌فرض زشت ویندوز
+                txtSearch.BorderStyle = BorderStyle.None; 
                 txtSearch.Paint += TxtSearch_Paint;
             }
         }
@@ -64,14 +64,14 @@ namespace ZoroufApp
 
         private void ApplyTheme()
         {
-            // اعمال مستقیم رنگ‌های دارک مود
+            
             this.BackColor = colorFormBgDark;
             this.ForeColor = colorTextDark;
 
-            // تغییر رنگ نوار عنوان اصلی ویندوز به دارک مود شیک
+            
             SetFormTitleBarTheme(this.Handle, true);
 
-            // تنظیمات متنی و رنگی تکست‌باکس جستجو
+            
             txtSearch.Font = new Font("Segoe UI", 11, FontStyle.Regular);
             txtSearch.BackColor = Color.FromArgb(45, 45, 45);
             txtSearch.ForeColor = Color.White;
@@ -87,7 +87,7 @@ namespace ZoroufApp
                 LoadDishes(txtSearch.Text);
             }
 
-            // اعمال فریم‌های گرد برای کنترل‌ها
+            
             SetRoundedRegion(txtSearch, 8);
             if (btnAddNewDish != null) SetRoundedRegion(btnAddNewDish, 12);
             if (btnEditDish != null) SetRoundedRegion(btnEditDish, 10);
@@ -121,7 +121,7 @@ namespace ZoroufApp
                 btnAddNewDish.FlatStyle = FlatStyle.Flat;
                 btnAddNewDish.BackColor = colorBtnAdd;
                 btnAddNewDish.ForeColor = Color.White;
-                btnAddNewDish.Font = new Font("Segoe UI", 11, FontStyle.Bold);
+                btnAddNewDish.Font = new Font("Segoe UI", 13, FontStyle.Bold);
                 btnAddNewDish.FlatAppearance.BorderSize = 0;
                 btnAddNewDish.Cursor = Cursors.Hand;
                 btnAddNewDish.Height = 50;
@@ -139,7 +139,7 @@ namespace ZoroufApp
             btn.FlatStyle = FlatStyle.Flat;
             btn.BackColor = themeColor;
             btn.ForeColor = Color.White;
-            btn.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+            btn.Font = new Font("Segoe UI", 13, FontStyle.Bold);
             btn.FlatAppearance.BorderSize = 0;
             btn.Cursor = Cursors.Hand;
             btn.Height = 40;
