@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36811.4 d17.14
+VisualStudioVersion = 17.14.36811.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZoroufApp", "ZoroufApp\ZoroufApp.csproj", "{19F34850-65A9-4906-B4E1-E1871E42BEC0}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "ZoroufAppSetup", "ZoroufAppSetup\ZoroufAppSetup.vdproj", "{CC0345E6-D365-6AC1-6704-BD75DD753B27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,8 @@ Global
 		{19F34850-65A9-4906-B4E1-E1871E42BEC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19F34850-65A9-4906-B4E1-E1871E42BEC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19F34850-65A9-4906-B4E1-E1871E42BEC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC0345E6-D365-6AC1-6704-BD75DD753B27}.Debug|Any CPU.ActiveCfg = Debug
+		{CC0345E6-D365-6AC1-6704-BD75DD753B27}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

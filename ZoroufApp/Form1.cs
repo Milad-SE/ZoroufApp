@@ -13,10 +13,11 @@ namespace ZoroufApp
         private int selectedDishId = -1;
         private Button selectedButton = null;
 
-        
+        private DateTime lastClickTime = DateTime.MinValue;
+        private Button lastClickedButton = null;
+
         private const bool isDarkMode = true;
 
-        
         private Color colorFormBgDark = Color.FromArgb(18, 18, 18);
         private Color colorPanelBgDark = Color.FromArgb(30, 30, 30);
         private Color colorCardBgDark = Color.FromArgb(43, 43, 43);
@@ -24,15 +25,12 @@ namespace ZoroufApp
         private Color colorCardHoverDark = Color.FromArgb(55, 55, 55);
         private Color colorTextDark = Color.FromArgb(240, 240, 240);
 
-        
         private Color colorCardSelected = Color.FromArgb(41, 121, 255);
 
-        
         private Color colorBtnAdd = Color.FromArgb(46, 204, 113);
         private Color colorBtnEdit = Color.FromArgb(52, 152, 219);
         private Color colorBtnDelete = Color.FromArgb(231, 76, 60);
 
-        
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
@@ -44,12 +42,9 @@ namespace ZoroufApp
             InitializeComponent();
             LoadProgramIcon();
 
-            
-            if (txtSearch != null)
-            {
-                txtSearch.BorderStyle = BorderStyle.None; 
-                txtSearch.Paint += TxtSearch_Paint;
-            }
+            // توجه: کنترل TextBox استاندارد رویداد Paint را پشتیبانی نمی‌کند.
+            // کادر دور تکست‌باکس را در رویداد Paint خود فرم یا کانتینر آن رسم می‌کنیم.
+            this.Paint += Form1_Paint; 
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -64,17 +59,15 @@ namespace ZoroufApp
 
         private void ApplyTheme()
         {
-            
             this.BackColor = colorFormBgDark;
             this.ForeColor = colorTextDark;
 
-            
             SetFormTitleBarTheme(this.Handle, true);
 
-            
             txtSearch.Font = new Font("Segoe UI", 11, FontStyle.Regular);
             txtSearch.BackColor = Color.FromArgb(45, 45, 45);
             txtSearch.ForeColor = Color.White;
+            txtSearch.BorderStyle = BorderStyle.FixedSingle; // تغییر به حالت استاندارد برای مچ شدن با تم
 
             flowLayoutPanelDishes.RightToLeft = RightToLeft.Yes;
             flowLayoutPanelDishes.BackColor = colorPanelBgDark;
@@ -87,13 +80,30 @@ namespace ZoroufApp
                 LoadDishes(txtSearch.Text);
             }
 
-            
             SetRoundedRegion(txtSearch, 8);
             if (btnAddNewDish != null) SetRoundedRegion(btnAddNewDish, 12);
             if (btnEditDish != null) SetRoundedRegion(btnEditDish, 10);
             if (btnDeleteDish != null) SetRoundedRegion(btnDeleteDish, 10);
 
-            txtSearch.Invalidate();
+            this.Invalidate(); // بازنشانی رسم کادر دور تکست‌باکس روی فرم
+        }
+
+        private void Form1_Paint(object sender, PaintEventArgs e)
+        {
+            // رسم یک کادر زیباتر دور تکست‌باکس روی سطح فرم (جایگزین تگ Paint تکست باکس)
+            if (txtSearch != null && txtSearch.Visible)
+            {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                Color borderColor = Color.FromArgb(80, 80, 80);
+                
+                // ایجاد محدوده کادر کمی بزرگتر از خود تکست باکس جهت نمایش بهتر
+                Rectangle rect = new Rectangle(txtSearch.Left - 1, txtSearch.Top - 1, txtSearch.Width + 1, txtSearch.Height + 1);
+                using (Pen p = new Pen(borderColor, 1.5f))
+                using (GraphicsPath path = GetRoundedPath(rect, 8))
+                {
+                    e.Graphics.DrawPath(p, path);
+                }
+            }
         }
 
         private void SetFormTitleBarTheme(IntPtr handle, bool useDark)
@@ -147,23 +157,15 @@ namespace ZoroufApp
             btn.Padding = new Padding(0);
         }
 
-        private void TxtSearch_Paint(object sender, PaintEventArgs e)
-        {
-            TextBox box = (TextBox)sender;
-            e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-
-            Color borderColor = Color.FromArgb(80, 80, 80);
-            using (Pen p = new Pen(borderColor, 1.5f))
-            {
-                GraphicsPath path = GetRoundedPath(box.ClientRectangle, 8);
-                e.Graphics.DrawPath(p, path);
-            }
-        }
-
         private GraphicsPath GetRoundedPath(Rectangle rect, int radius)
         {
             GraphicsPath path = new GraphicsPath();
             int diameter = radius * 2;
+            
+            // جلوگیری از خطای ابعاد منفی در کنترل‌های کوچک
+            if (diameter > rect.Width) diameter = rect.Width;
+            if (diameter > rect.Height) diameter = diameter = rect.Height;
+
             path.AddArc(rect.X, rect.Y, diameter, diameter, 180, 90);
             path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 90);
             path.AddArc(rect.Right - diameter, rect.Bottom - diameter, diameter, diameter, 0, 90);
@@ -174,8 +176,18 @@ namespace ZoroufApp
 
         private void SetRoundedRegion(Control control, int radius)
         {
-            GraphicsPath path = GetRoundedPath(control.ClientRectangle, radius);
-            control.Region = new Region(path);
+            if (control == null || control.ClientRectangle.Width == 0) return;
+
+            // آزاد کردن ریجن قبلی برای جلوگیری از نشت حافظه (Memory Leak)
+            if (control.Region != null)
+            {
+                control.Region.Dispose();
+            }
+
+            using (GraphicsPath path = GetRoundedPath(control.ClientRectangle, radius))
+            {
+                control.Region = new Region(path);
+            }
         }
 
         private void LoadProgramIcon()
@@ -195,42 +207,38 @@ namespace ZoroufApp
             using (var connection = new SqliteConnection(connectionString))
             {
                 connection.Open();
-                string createTableQuery = @"
-                    CREATE TABLE IF NOT EXISTS Dishes (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        Name TEXT NOT Null,
-                        Description TEXT
-                    );";
 
-                using (var command = new SqliteCommand(createTableQuery, connection))
-                {
-                    command.ExecuteNonQuery();
-                }
+                string createDishesTable = @"
+                CREATE TABLE IF NOT EXISTS Dishes (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    Description TEXT
+                );";
+                using (var command = new SqliteCommand(createDishesTable, connection)) { command.ExecuteNonQuery(); }
 
-                string checkQuery = "SELECT COUNT(*) FROM Dishes";
-                using (var checkCmd = new SqliteCommand(checkQuery, connection))
-                {
-                    long count = (long)checkCmd.ExecuteScalar();
-                    if (count == 0)
-                    {
-                        string insertQuery = @"
-                            INSERT INTO Dishes (Name, Description) VALUES 
-                            (N'قابلمه چدنی سایز ۲۸', N'توضیحات: مناسب برای پخت انواع خورش و پلو با کیفیت بالا.'),
-                            (N'بشقاب ملامین طرح‌دار', N'توضیحات: نشکن، سبک و مناسب برای مصارف روزمره و پیکنیک.'),
-                            (N'لیوان کریستال تراش‌خورده', N'توضیحات: جنس بلور باکیفیت، بسیار شفاف و مخصوص پذیرایی.');";
-
-                        using (var insertCmd = new SqliteCommand(insertQuery, connection))
-                        {
-                            insertCmd.ExecuteNonQuery();
-                        }
-                    }
-                }
+                string createProductsTable = @"
+                CREATE TABLE IF NOT EXISTS Products (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    DishId INTEGER NOT NULL,
+                    Name TEXT NOT NULL,
+                    Unit TEXT,
+                    Price REAL DEFAULT 0,
+                    Quantity INTEGER DEFAULT 0,
+                    FOREIGN KEY (DishId) REFERENCES Dishes(Id) ON DELETE CASCADE
+                );";
+                using (var command = new SqliteCommand(createProductsTable, connection)) { command.ExecuteNonQuery(); }
             }
         }
 
         private void LoadDishes(string searchTerm = "")
         {
+            // ابتدا برای جلوگیری از نشت حافظه دکمه‌های قبلی را Dispose می‌کنیم
+            foreach (Control ctrl in flowLayoutPanelDishes.Controls)
+            {
+                ctrl.Dispose();
+            }
             flowLayoutPanelDishes.Controls.Clear();
+            
             selectedDishId = -1;
             selectedButton = null;
 
@@ -283,7 +291,6 @@ namespace ZoroufApp
                             };
 
                             btnDish.Click += BtnDish_Click;
-                            btnDish.DoubleClick += BtnDish_DoubleClick;
 
                             SetRoundedRegion(btnDish, 10);
                             flowLayoutPanelDishes.Controls.Add(btnDish);
@@ -295,6 +302,20 @@ namespace ZoroufApp
 
         private void BtnDish_Click(object sender, EventArgs e)
         {
+            Button currentButton = (Button)sender;
+            TimeSpan clickDelta = DateTime.Now - lastClickTime;
+
+            if (currentButton == lastClickedButton && clickDelta.TotalMilliseconds < 500)
+            {
+                OpenProductsForm(currentButton);
+                lastClickTime = DateTime.MinValue;
+                lastClickedButton = null;
+                return;
+            }
+
+            lastClickTime = DateTime.Now;
+            lastClickedButton = currentButton;
+
             if (selectedButton != null)
             {
                 selectedButton.BackColor = colorCardBgDark;
@@ -303,7 +324,7 @@ namespace ZoroufApp
                 selectedButton.ForeColor = colorTextDark;
             }
 
-            selectedButton = (Button)sender;
+            selectedButton = currentButton;
             selectedButton.BackColor = colorCardSelected;
             selectedButton.FlatAppearance.BorderSize = 0;
             selectedButton.Font = new Font("Segoe UI", 10, FontStyle.Bold);
@@ -312,11 +333,19 @@ namespace ZoroufApp
             selectedDishId = (int)selectedButton.Tag;
         }
 
-        private void BtnDish_DoubleClick(object sender, EventArgs e)
+        private void OpenProductsForm(Button btn)
         {
-            Button btn = (Button)sender;
-            int dishId = (int)btn.Tag;
-            ShowCustomMessage($"شما روی ظرف با کد {dishId} و نام «{btn.Text.Trim()}» دبل کلیک کردید.\nدر مرحله بعد، این کلیک فرم دوم را باز می‌کند.", "اطلاعات ظرف");
+            if (btn.Tag != null)
+            {
+                int dishId = (int)btn.Tag;
+                string dishName = btn.Text.Trim();
+
+                // فراخوانی فرم دوم به صورت مودال
+                using (Form2 productsForm = new Form2(dishId, dishName))
+                {
+                    productsForm.ShowDialog(this);
+                }
+            }
         }
 
         private void btnAddNewDish_Click_1(object sender, EventArgs e)
@@ -379,7 +408,7 @@ namespace ZoroufApp
                 return;
             }
 
-            bool confirmDelete = ShowCustomConfirm($"آیا از حذف ظرف «{selectedButton.Text.Trim()}» مطمئن هستید؟", "تایید حذف عملیات");
+            bool confirmDelete = ShowCustomConfirm($"آیا از حذف ظرف «{selectedButton.Text.Trim()}» مطمئن هستید؟\nبا حذف این ظرف، تمام محصولات مرتبط با آن نیز حذف خواهند شد.", "تایید حذف عملیات");
 
             if (confirmDelete)
             {
@@ -422,16 +451,15 @@ namespace ZoroufApp
             inputForm.FormBorderStyle = FormBorderStyle.None;
             inputForm.StartPosition = FormStartPosition.CenterParent;
             inputForm.Size = new Size(400, 190);
-            inputForm.Text = title;
             inputForm.BackColor = Color.FromArgb(40, 40, 40);
 
-            inputForm.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            inputForm.Paint += (s, ev) => {
+                ev.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 Color borderCol = Color.FromArgb(75, 75, 75);
                 using (Pen p = new Pen(borderCol, 2f))
+                using (GraphicsPath path = GetRoundedPath(inputForm.ClientRectangle, 14))
                 {
-                    GraphicsPath path = GetRoundedPath(inputForm.ClientRectangle, 14);
-                    e.Graphics.DrawPath(p, path);
+                    ev.Graphics.DrawPath(p, path);
                 }
             };
 
@@ -464,7 +492,7 @@ namespace ZoroufApp
             btnSubmit.BackColor = colorBtnEdit;
             btnSubmit.ForeColor = Color.White;
             btnSubmit.Cursor = Cursors.Hand;
-            btnSubmit.Click += (s, e) => { inputResult = txtInput.Text; inputForm.Close(); };
+            btnSubmit.Click += (s, ev) => { inputResult = txtInput.Text; inputForm.Close(); };
 
             Button btnCancel = new Button();
             btnCancel.Text = "انصراف";
@@ -476,7 +504,7 @@ namespace ZoroufApp
             btnCancel.BackColor = Color.FromArgb(65, 65, 65);
             btnCancel.ForeColor = Color.White;
             btnCancel.Cursor = Cursors.Hand;
-            btnCancel.Click += (s, e) => { inputForm.Close(); };
+            btnCancel.Click += (s, ev) => { inputForm.Close(); };
 
             inputForm.Controls.Add(lblPrompt);
             inputForm.Controls.Add(txtInput);
@@ -487,7 +515,7 @@ namespace ZoroufApp
             SetRoundedRegion(btnSubmit, 8);
             SetRoundedRegion(btnCancel, 8);
 
-            inputForm.Load += (s, e) => {
+            inputForm.Load += (s, ev) => {
                 txtInput.Focus();
                 txtInput.SelectAll();
             };
@@ -502,16 +530,15 @@ namespace ZoroufApp
             msgForm.FormBorderStyle = FormBorderStyle.None;
             msgForm.StartPosition = FormStartPosition.CenterParent;
             msgForm.Size = new Size(380, 160);
-            msgForm.Text = title;
             msgForm.BackColor = Color.FromArgb(40, 40, 40);
 
-            msgForm.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            msgForm.Paint += (s, ev) => {
+                ev.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 Color borderCol = Color.FromArgb(75, 75, 75);
                 using (Pen p = new Pen(borderCol, 2f))
+                using (GraphicsPath path = GetRoundedPath(msgForm.ClientRectangle, 12))
                 {
-                    GraphicsPath path = GetRoundedPath(msgForm.ClientRectangle, 12);
-                    e.Graphics.DrawPath(p, path);
+                    ev.Graphics.DrawPath(p, path);
                 }
             };
 
@@ -534,7 +561,7 @@ namespace ZoroufApp
             btnOk.BackColor = colorBtnAdd;
             btnOk.ForeColor = Color.White;
             btnOk.Cursor = Cursors.Hand;
-            btnOk.Click += (s, e) => { msgForm.Close(); };
+            btnOk.Click += (s, ev) => { msgForm.Close(); };
 
             msgForm.Controls.Add(lblMessage);
             msgForm.Controls.Add(btnOk);
@@ -553,16 +580,15 @@ namespace ZoroufApp
             confirmForm.FormBorderStyle = FormBorderStyle.None;
             confirmForm.StartPosition = FormStartPosition.CenterParent;
             confirmForm.Size = new Size(380, 160);
-            confirmForm.Text = title;
             confirmForm.BackColor = Color.FromArgb(40, 40, 40);
 
-            confirmForm.Paint += (s, e) => {
-                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+            confirmForm.Paint += (s, ev) => {
+                ev.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
                 Color borderCol = Color.FromArgb(75, 75, 75);
                 using (Pen p = new Pen(borderCol, 2f))
+                using (GraphicsPath path = GetRoundedPath(confirmForm.ClientRectangle, 12))
                 {
-                    GraphicsPath path = GetRoundedPath(confirmForm.ClientRectangle, 12);
-                    e.Graphics.DrawPath(p, path);
+                    ev.Graphics.DrawPath(p, path);
                 }
             };
 
@@ -585,7 +611,7 @@ namespace ZoroufApp
             btnYes.BackColor = colorBtnDelete;
             btnYes.ForeColor = Color.White;
             btnYes.Cursor = Cursors.Hand;
-            btnYes.Click += (s, e) => { result = true; confirmForm.Close(); };
+            btnYes.Click += (s, ev) => { result = true; confirmForm.Close(); };
 
             Button btnNo = new Button();
             btnNo.Text = "خیر";
@@ -597,7 +623,7 @@ namespace ZoroufApp
             btnNo.BackColor = Color.FromArgb(65, 65, 65);
             btnNo.ForeColor = Color.White;
             btnNo.Cursor = Cursors.Hand;
-            btnNo.Click += (s, e) => { result = false; confirmForm.Close(); };
+            btnNo.Click += (s, ev) => { result = false; confirmForm.Close(); };
 
             confirmForm.Controls.Add(lblMessage);
             confirmForm.Controls.Add(btnYes);

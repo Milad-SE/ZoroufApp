@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             btnAddNewDish = new Button();
             btnEditDish = new Button();
             btnDeleteDish = new Button();
@@ -96,6 +97,7 @@
             Controls.Add(btnDeleteDish);
             Controls.Add(btnEditDish);
             Controls.Add(btnAddNewDish);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             RightToLeft = RightToLeft.No;
             Text = "مدیریت و لیست ظروف";
